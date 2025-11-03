@@ -287,6 +287,28 @@ class ReportGenerator:
                                 story.append(Paragraph(step_text, styles['BodyText']))
                             story.append(Spacer(1, 0.05*inch))
                         
+                        # Code examples (Vulnerable vs Secure)
+                        code_example = remediation_details.get('code_example', '')
+                        if code_example:
+                            story.append(Paragraph("<b>Code Example (Vulnerable vs Secure):</b>", styles['BodyText']))
+                            # Use a monospaced style for code
+                            code_style = ParagraphStyle(
+                                'Code',
+                                parent=styles['Code'] if 'Code' in styles else styles['BodyText'],
+                                fontName='Courier',
+                                fontSize=9,
+                                leftIndent=20,
+                                rightIndent=20,
+                                backColor=colors.HexColor('#f5f5f5'),
+                                spaceBefore=5,
+                                spaceAfter=5
+                            )
+                            # Clean and format code example
+                            code_lines = code_example.strip().split('\n')
+                            for line in code_lines:
+                                story.append(Paragraph(escape(line), code_style))
+                            story.append(Spacer(1, 0.05*inch))
+                        
                         # References
                         references = remediation_details.get('references', [])
                         if references:
