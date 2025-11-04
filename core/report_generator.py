@@ -1,6 +1,6 @@
 """
 Report Generator
-Creates professional security assessment reports
+Creates professional security assessment reports with multi-language support
 """
 
 import json
@@ -10,6 +10,7 @@ from typing import Dict, List
 from jinja2 import Template
 from utils.logger import get_logger
 from core.remediation_guide import RemediationGuide
+from utils.translations import Translator
 
 logger = get_logger(__name__)
 
@@ -22,6 +23,11 @@ class ReportGenerator:
         self.config = config
         self.report_config = config.get('reporting', {})
         self.template_dir = Path(__file__).parent.parent.parent / 'templates'
+        
+        # Initialize translator with configured language
+        language = self.report_config.get('language', 'en')
+        self.translator = Translator(language)
+        logger.info(f"Report language set to: {language}")
     
     def generate(self, results: Dict, output_path: str, format: str = 'html'):
         """
@@ -49,7 +55,7 @@ class ReportGenerator:
         logger.info(f"JSON report generated: {output_path}")
     
     def _generate_html(self, results: Dict, output_path: str):
-        """Generate HTML report."""
+        """Generate HTML report with multi-language support."""
         template_content = self._get_html_template()
         template = Template(template_content)
         
@@ -57,9 +63,10 @@ class ReportGenerator:
         vulnerabilities = results.get('vulnerabilities', [])
         enhanced_vulns = [RemediationGuide.enhance_vulnerability(v.copy()) for v in vulnerabilities]
         
-        # Prepare data for template
+        # Prepare data for template with translations
+        t = self.translator
         report_data = {
-            'title': 'Deep Eye Security Assessment Report',
+            'title': t.get('report_title'),
             'generated_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'target': results.get('target'),
             'scan_duration': results.get('duration'),
@@ -68,6 +75,34 @@ class ReportGenerator:
             'severity_counts': results.get('severity_summary', {}),
             'urls_scanned': results.get('urls_crawled', 0),
             'reconnaissance': results.get('reconnaissance', {}),
+            # Add translated labels
+            'labels': {
+                'executive_summary': t.get('executive_summary'),
+                'vulnerabilities': t.get('vulnerabilities'),
+                'target': t.get('target'),
+                'generated': t.get('generated_date'),
+                'scan_duration': t.get('scan_duration'),
+                'urls_scanned': t.get('urls_scanned'),
+                'reconnaissance': t.get('reconnaissance'),
+                'severity': t.get('severity'),
+                'critical': t.get('critical'),
+                'high': t.get('high'),
+                'medium': t.get('medium'),
+                'low': t.get('low'),
+                'url': t.get('url'),
+                'parameter': t.get('parameter'),
+                'description': t.get('description'),
+                'evidence': t.get('evidence'),
+                'discovered': t.get('discovered'),
+                'remediation_guidance': t.get('remediation_guidance'),
+                'priority': t.get('priority'),
+                'estimated_fix_time': t.get('estimated_fix_time'),
+                'steps_to_fix': t.get('steps_to_fix'),
+                'code_example': t.get('code_example'),
+                'references': t.get('references'),
+                'no_vulnerabilities': t.get('no_vulnerabilities'),
+            },
+            'language': self.translator.language,
         }
         
         html_content = template.render(**report_data)
@@ -75,7 +110,7 @@ class ReportGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
         
-        logger.info(f"HTML report generated: {output_path}")
+        logger.info(f"HTML report generated: {output_path} (Language: {self.translator.language})")
     
     def _generate_pdf(self, results: Dict, output_path: str):
         """Generate PDF report using ReportLab (Windows-friendly)."""
@@ -117,16 +152,17 @@ class ReportGenerator:
                 spaceBefore=12
             )
             
-            # Title
-            story.append(Paragraph("Deep Eye Security Assessment Report", title_style))
+            # Title (with translation)
+            t = self.translator
+            story.append(Paragraph(t.get('report_title'), title_style))
             story.append(Spacer(1, 0.2*inch))
             
-            # Metadata table
+            # Metadata table (with translations)
             metadata = [
-                ['Target:', results.get('target', 'N/A')],
-                ['Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
-                ['Scan Duration:', str(results.get('duration', 'N/A'))],
-                ['URLs Scanned:', str(results.get('urls_crawled', 0))]
+                [t.get('target') + ':', results.get('target', 'N/A')],
+                [t.get('generated_date') + ':', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+                [t.get('scan_duration') + ':', str(results.get('duration', 'N/A'))],
+                [t.get('urls_scanned') + ':', str(results.get('urls_crawled', 0))]
             ]
             
             metadata_table = Table(metadata, colWidths=[2*inch, 4*inch])
@@ -145,12 +181,12 @@ class ReportGenerator:
             # Reconnaissance & OSINT Data
             recon_data = results.get('reconnaissance', {})
             if recon_data:
-                story.append(Paragraph("Reconnaissance & OSINT Intelligence", heading_style))
+                story.append(Paragraph(t.get('reconnaissance'), heading_style))
                 
                 # DNS Information
                 dns_info = recon_data.get('dns', {})
                 if dns_info:
-                    story.append(Paragraph("<b>DNS Records:</b>", styles['Heading4']))
+                    story.append(Paragraph(f"<b>{t.get('dns_records')}:</b>", styles['Heading4']))
                     dns_records = []
                     for record_type, records in dns_info.items():
                         if records:
@@ -168,12 +204,12 @@ class ReportGenerator:
                 # OSINT Data
                 osint_data = recon_data.get('osint', {})
                 if osint_data:
-                    story.append(Paragraph("<b>OSINT Findings:</b>", styles['Heading4']))
+                    story.append(Paragraph(f"<b>{t.get('osint_findings')}:</b>", styles['Heading4']))
                     
                     # Emails
                     emails = osint_data.get('emails', [])
                     if emails:
-                        story.append(Paragraph(f"Emails found: {len(emails)}", styles['BodyText']))
+                        story.append(Paragraph(f"{t.get('emails_found')}: {len(emails)}", styles['BodyText']))
                         safe_emails = [escape(str(e)) for e in emails[:5]]
                         story.append(Paragraph(', '.join(safe_emails), styles['BodyText']))
                         story.append(Spacer(1, 0.1*inch))
@@ -181,7 +217,7 @@ class ReportGenerator:
                     # Subdomains
                     subdomains = osint_data.get('subdomains', [])
                     if subdomains:
-                        story.append(Paragraph(f"Subdomains discovered: {len(subdomains)}", styles['BodyText']))
+                        story.append(Paragraph(f"{t.get('subdomains_discovered')}: {len(subdomains)}", styles['BodyText']))
                         safe_subdomains = [escape(str(s)) for s in subdomains[:10]]
                         story.append(Paragraph(', '.join(safe_subdomains), styles['BodyText']))
                         story.append(Spacer(1, 0.1*inch))
@@ -189,20 +225,20 @@ class ReportGenerator:
                     # Technologies
                     technologies = recon_data.get('technologies', [])
                     if technologies:
-                        safe_techs = [escape(str(t)) for t in technologies]
-                        story.append(Paragraph(f"Technologies detected: {', '.join(safe_techs)}", styles['BodyText']))
+                        safe_techs = [escape(str(tech)) for tech in technologies]
+                        story.append(Paragraph(f"{t.get('technologies_detected')}: {', '.join(safe_techs)}", styles['BodyText']))
                         story.append(Spacer(1, 0.1*inch))
                 
                 story.append(PageBreak())
             
-            # Severity Summary
+            # Severity Summary (with translations)
             severity_counts = results.get('severity_summary', {})
             severity_data = [
-                ['Severity', 'Count'],
-                ['Critical', str(severity_counts.get('critical', 0))],
-                ['High', str(severity_counts.get('high', 0))],
-                ['Medium', str(severity_counts.get('medium', 0))],
-                ['Low', str(severity_counts.get('low', 0))]
+                [t.get('severity'), t.get('count')],
+                [t.get('critical'), str(severity_counts.get('critical', 0))],
+                [t.get('high'), str(severity_counts.get('high', 0))],
+                [t.get('medium'), str(severity_counts.get('medium', 0))],
+                [t.get('low'), str(severity_counts.get('low', 0))]
             ]
             
             severity_table = Table(severity_data, colWidths=[3*inch, 3*inch])
@@ -228,14 +264,14 @@ class ReportGenerator:
             story.append(severity_table)
             story.append(Spacer(1, 0.3*inch))
             
-            # Executive Summary
-            story.append(Paragraph("Executive Summary", heading_style))
+            # Executive Summary (with translation)
+            story.append(Paragraph(t.get('executive_summary'), heading_style))
             summary_text = self._generate_summary(results)
             story.append(Paragraph(summary_text.replace('\n', '<br/>'), styles['BodyText']))
             story.append(Spacer(1, 0.3*inch))
             
-            # Vulnerabilities
-            story.append(Paragraph("Vulnerabilities", heading_style))
+            # Vulnerabilities (with translation)
+            story.append(Paragraph(t.get('vulnerabilities'), heading_style))
             vulnerabilities = self._sort_vulnerabilities(results.get('vulnerabilities', []))
             
             if vulnerabilities:
@@ -246,9 +282,9 @@ class ReportGenerator:
                     vuln_title = f"<b>{vuln_type}</b> - {vuln_severity}"
                     story.append(Paragraph(vuln_title, styles['Heading3']))
                     
-                    # Timestamp if available
+                    # Timestamp if available (with translation)
                     if vuln.get('timestamp'):
-                        timestamp_text = f"<i>Discovered: {escape(str(vuln.get('timestamp')))}</i>"
+                        timestamp_text = f"<i>{t.get('discovered')}: {escape(str(vuln.get('timestamp')))}</i>"
                         story.append(Paragraph(timestamp_text, styles['BodyText']))
                     
                     # Vulnerability details (escape special characters)
@@ -259,11 +295,11 @@ class ReportGenerator:
                     vuln_cwe = escape(str(vuln.get('cwe', 'N/A')))
                     
                     vuln_details = f"""
-                    <b>URL:</b> {vuln_url}<br/>
-                    <b>Parameter:</b> {vuln_param}<br/>
+                    <b>{t.get('url')}:</b> {vuln_url}<br/>
+                    <b>{t.get('parameter')}:</b> {vuln_param}<br/>
                     <b>CWE:</b> {vuln_cwe}<br/>
-                    <b>Description:</b> {vuln_desc}<br/>
-                    <b>Evidence:</b> {vuln_evidence}
+                    <b>{t.get('description')}:</b> {vuln_desc}<br/>
+                    <b>{t.get('evidence')}:</b> {vuln_evidence}
                     """
                     story.append(Paragraph(vuln_details, styles['BodyText']))
                     story.append(Spacer(1, 0.1*inch))
@@ -274,23 +310,23 @@ class ReportGenerator:
                         priority = remediation_details.get('priority', 'MEDIUM')
                         fix_time = remediation_details.get('fix_time', 'N/A')
                         
-                        story.append(Paragraph(f"<b>Remediation Guidance</b>", styles['Heading4']))
-                        story.append(Paragraph(f"<b>Priority:</b> {priority} | <b>Estimated Fix Time:</b> {fix_time}", styles['BodyText']))
+                        story.append(Paragraph(f"<b>{t.get('remediation_guidance')}</b>", styles['Heading4']))
+                        story.append(Paragraph(f"<b>{t.get('priority')}:</b> {priority} | <b>{t.get('estimated_fix_time')}:</b> {fix_time}", styles['BodyText']))
                         story.append(Spacer(1, 0.05*inch))
                         
-                        # Remediation steps
+                        # Remediation steps (with translation)
                         steps = remediation_details.get('steps', [])
                         if steps:
-                            story.append(Paragraph("<b>Steps to Fix:</b>", styles['BodyText']))
+                            story.append(Paragraph(f"<b>{t.get('steps_to_fix')}:</b>", styles['BodyText']))
                             for i, step in enumerate(steps[:5], 1):  # Limit to 5 steps for PDF
                                 step_text = f"{i}. {escape(str(step))}"
                                 story.append(Paragraph(step_text, styles['BodyText']))
                             story.append(Spacer(1, 0.05*inch))
                         
-                        # Code examples (Vulnerable vs Secure)
+                        # Code examples (Vulnerable vs Secure) (with translation)
                         code_example = remediation_details.get('code_example', '')
                         if code_example:
-                            story.append(Paragraph("<b>Code Example (Vulnerable vs Secure):</b>", styles['BodyText']))
+                            story.append(Paragraph(f"<b>{t.get('code_example')}:</b>", styles['BodyText']))
                             # Use a monospaced style for code
                             code_style = ParagraphStyle(
                                 'Code',
@@ -309,20 +345,20 @@ class ReportGenerator:
                                 story.append(Paragraph(escape(line), code_style))
                             story.append(Spacer(1, 0.05*inch))
                         
-                        # References
+                        # References (with translation)
                         references = remediation_details.get('references', [])
                         if references:
-                            story.append(Paragraph("<b>References:</b>", styles['BodyText']))
+                            story.append(Paragraph(f"<b>{t.get('references')}:</b>", styles['BodyText']))
                             for ref in references[:3]:  # Limit to 3 references for PDF
                                 ref_text = f"• {escape(str(ref))}"
                                 story.append(Paragraph(ref_text, styles['BodyText']))
                     else:
                         vuln_remediation = escape(str(vuln.get('remediation', 'N/A')))
-                        story.append(Paragraph(f"<b>Remediation:</b> {vuln_remediation}", styles['BodyText']))
+                        story.append(Paragraph(f"<b>{t.get('remediation')}:</b> {vuln_remediation}", styles['BodyText']))
                     
                     story.append(Spacer(1, 0.3*inch))
             else:
-                story.append(Paragraph("No vulnerabilities detected.", styles['BodyText']))
+                story.append(Paragraph(t.get('no_vulnerabilities'), styles['BodyText']))
             
             # Build PDF
             doc.build(story)
@@ -342,22 +378,25 @@ class ReportGenerator:
             logger.info(f"HTML report available at: {html_path}")
     
     def _generate_summary(self, results: Dict) -> str:
-        """Generate executive summary."""
+        """Generate executive summary with multi-language support."""
         total_vulns = len(results.get('vulnerabilities', []))
         severity_counts = results.get('severity_summary', {})
+        t = self.translator
         
-        summary = f"""
-        This security assessment identified {total_vulns} potential security issues on the target system.
+        # Get base summary text with formatting
+        base_summary = t.format('summary_text', total=total_vulns)
         
-        Critical vulnerabilities require immediate attention as they pose significant risk to the organization.
-        High and medium severity issues should be addressed in order of priority.
+        # Build risk distribution section
+        risk_dist = f"""
         
-        Risk Distribution:
-        - Critical: {severity_counts.get('critical', 0)} issues
-        - High: {severity_counts.get('high', 0)} issues
-        - Medium: {severity_counts.get('medium', 0)} issues
-        - Low: {severity_counts.get('low', 0)} issues
+        {t.get('risk_distribution')}:
+        - {t.get('critical')}: {severity_counts.get('critical', 0)} {t.get('issues')}
+        - {t.get('high')}: {severity_counts.get('high', 0)} {t.get('issues')}
+        - {t.get('medium')}: {severity_counts.get('medium', 0)} {t.get('issues')}
+        - {t.get('low')}: {severity_counts.get('low', 0)} {t.get('issues')}
         """
+        
+        summary = base_summary + risk_dist
         
         return summary.strip()
     

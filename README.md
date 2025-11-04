@@ -69,6 +69,7 @@ An advanced AI-driven vulnerability scanner and penetration testing tool that in
 - **Custom Plugin System** (Extend with your own scanners)
 - **Multi-Channel Notifications** (Email, Slack, Discord alerts)
 - **Enhanced OSINT Reporting** (Reconnaissance data in all reports)
+- **Multi-Language Reports** (Generate reports in English, French, or Arabic)
 
 And 17+ more attack vectors
 
@@ -166,6 +167,23 @@ python deep_eye.py
 
 **Note:** All scanning options (depth, threads, AI provider, scan mode, proxy, etc.) are now configured in `config.yaml` for better management and repeatability.
 
+## 🌍 Multi-Language Report Support
+
+Deep Eye now supports generating reports in **three languages**:
+
+- **English** (`en`) - Default
+- **Français** (French) (`fr`) 
+- **العربية** (Arabic) (`ar`)
+
+To choose your report language, edit `config/config.yaml`:
+
+```yaml
+reporting:
+  language: "en"  # Options: en (English), fr (Français), ar (العربية)
+```
+
+All report elements are translated, including titles, sections, vulnerability details, and remediation guidance. See [docs/MULTI_LANGUAGE_GUIDE.md](docs/MULTI_LANGUAGE_GUIDE.md) for complete documentation.
+
 ## 📁 Project Structure
 
 ```
@@ -236,6 +254,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - **[Quick Start Guide](docs/QUICKSTART.md)** - Get started quickly
 - **[Architecture](docs/ARCHITECTURE.md)** - System design and structure
+- **[Multi-Language Guide](docs/MULTI_LANGUAGE_GUIDE.md)** - How to generate reports in different languages
 - **[Testing Guide](docs/TESTING_GUIDE.md)** - Testing procedures
 - **[Contributing](docs/CONTRIBUTING.md)** - How to contribute
 - **[Changelog](docs/CHANGELOG.md)** - Version history

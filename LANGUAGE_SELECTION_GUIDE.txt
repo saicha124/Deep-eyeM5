@@ -1,0 +1,81 @@
+═══════════════════════════════════════════════════════════════════════
+  DEEP EYE - MULTI-LANGUAGE REPORT SELECTION GUIDE
+═══════════════════════════════════════════════════════════════════════
+
+Deep Eye now supports generating security reports in 3 languages:
+
+  ✓ English (en)     - Default
+  ✓ Français (fr)    - French
+  ✓ العربية (ar)     - Arabic
+
+═══════════════════════════════════════════════════════════════════════
+  HOW TO CHOOSE YOUR REPORT LANGUAGE
+═══════════════════════════════════════════════════════════════════════
+
+STEP 1: Open your configuration file
+        → config/config.yaml
+
+STEP 2: Find the "reporting" section
+        → Look for the line that says "reporting:"
+
+STEP 3: Set your preferred language
+        → Change the "language:" value to one of: en, fr, or ar
+
+═══════════════════════════════════════════════════════════════════════
+  EXAMPLES
+═══════════════════════════════════════════════════════════════════════
+
+For English reports:
+--------------------
+reporting:
+  language: "en"
+
+
+For French reports:
+-------------------
+reporting:
+  language: "fr"
+
+
+For Arabic reports:
+-------------------
+reporting:
+  language: "ar"
+
+
+═══════════════════════════════════════════════════════════════════════
+  WHAT GETS TRANSLATED
+═══════════════════════════════════════════════════════════════════════
+
+✓ Report title and headers
+✓ Executive summary
+✓ Vulnerability sections
+✓ Severity labels (Critical, High, Medium, Low)
+✓ Technical details (URL, Parameter, Description, Evidence)
+✓ Remediation guidance
+✓ Priority levels and fix time estimates
+✓ All section headings and labels
+
+═══════════════════════════════════════════════════════════════════════
+  SUPPORTED FORMATS
+═══════════════════════════════════════════════════════════════════════
+
+✓ HTML Reports  - Fully translated with UTF-8 encoding
+✓ PDF Reports   - Fully translated with Unicode support
+✓ JSON Reports  - Language-independent (raw data)
+
+═══════════════════════════════════════════════════════════════════════
+  QUICK TEST
+═══════════════════════════════════════════════════════════════════════
+
+1. Edit config/config.yaml
+2. Set: language: "fr" (for French)
+3. Run a scan: python deep_eye.py -u https://example.com
+4. Check the generated report in the reports/ folder
+5. Report will be in French!
+
+═══════════════════════════════════════════════════════════════════════
+
+For complete documentation, see: docs/MULTI_LANGUAGE_GUIDE.md
+
+═══════════════════════════════════════════════════════════════════════

@@ -246,6 +246,7 @@ reporting:
   output_directory: "reports"  # Directory to save reports
   output_filename: ""  # Custom filename (auto-generated if empty)
   default_format: "html"  # Options: html, pdf, json
+  language: "en"  # Report language: en (English), fr (Français), ar (العربية)
   
   # Report sections
   include_sections:

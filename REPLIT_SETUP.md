@@ -75,6 +75,9 @@ scanner:
   default_threads: 5
   enable_recon: false
   full_scan: false
+
+reporting:
+  language: "en"  # Options: en (English), fr (Français), ar (العربية)
 ```
 
 ## 📖 Usage Examples
@@ -107,6 +110,23 @@ All scanning options (depth, threads, scan mode, etc.) are configured in `config
 - **Logs**: `logs/deep_eye.log`
   - Detailed execution logs
   - Useful for debugging
+
+## 🌍 Multi-Language Report Support (NEW)
+
+Deep Eye now supports generating reports in **three languages**:
+
+- **English** (`en`) - Default
+- **Français** (French) (`fr`)
+- **العربية** (Arabic) (`ar`)
+
+To change the report language, edit `config/config.yaml`:
+
+```yaml
+reporting:
+  language: "en"  # Change to: en, fr, or ar
+```
+
+All report elements will be translated, including titles, sections, vulnerability details, and remediation guidance. See `docs/MULTI_LANGUAGE_GUIDE.md` for complete documentation.
 
 ## ✨ Enhanced Reporting Features (NEW)
 
@@ -214,6 +234,7 @@ All report formats (HTML, PDF, JSON) include the enhanced information:
 For detailed documentation, see:
 - `README.md` - Full feature list and documentation
 - `docs/QUICKSTART.md` - Quick start guide
+- `docs/MULTI_LANGUAGE_GUIDE.md` - Multi-language report guide
 - `docs/ARCHITECTURE.md` - System architecture
 - `config/config.example.yaml` - Configuration reference
 
