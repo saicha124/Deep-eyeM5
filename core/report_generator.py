@@ -112,8 +112,8 @@ class ReportGenerator:
         """Generate HTML report with multi-language support."""
         template_content = self._get_html_template()
         
-        # Create Jinja environment with autoescaping enabled for security
-        env = Environment(autoescape=select_autoescape(['html', 'xml']))
+        # Create Jinja environment with autoescaping enabled for security (prevent XSS)
+        env = Environment(autoescape=True)
         template = env.from_string(template_content)
         
         # Read and encode CERIST logo as base64
@@ -200,8 +200,8 @@ class ReportGenerator:
         with open(template_path, 'r', encoding='utf-8') as f:
             template_content = f.read()
         
-        # Create Jinja environment with autoescaping enabled for security
-        env = Environment(autoescape=select_autoescape(['html', 'xml']))
+        # Create Jinja environment with autoescaping enabled for security (prevent XSS)
+        env = Environment(autoescape=True)
         template = env.from_string(template_content)
         
         # Read and encode CERIST logo (try SVG first, fallback to PNG)
