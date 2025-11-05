@@ -97,6 +97,16 @@ python deep_eye.py --version
 
 ## Recent Changes
 
+- **Security Misconfiguration Scanner Enhanced - November 5, 2025**
+  - Updated Security Misconfiguration scanner with detailed reporting
+  - Now includes payload_info and detector fields
+  - Reports show:
+    - **Payload Source**: `core/vulnerability_scanner.py (Line 814)`
+    - **Detection Source**: `Module: core.vulnerability_scanner`, `Function: _check_security_headers`, `Lines: 803-856`
+    - Complete HTTP request/response capture with security header checks
+  - All security header misconfigurations now display full attack chain details
+  - Matches the enhanced reporting format of XXE, XSS, and Command Injection scanners
+
 - **Template Directory Created - November 5, 2025**
   - Created missing `templates/` directory required for report generation
   - Created `templates/vulnerability_digest.html` with comprehensive vulnerability reporting template
@@ -108,6 +118,8 @@ python deep_eye.py --version
     - Responsive design for mobile and desktop
     - Beautiful gradient styling and professional layout
     - Comprehensive vulnerability details (description, evidence, payload, request/response, remediation)
+    - **Displays Payload Source**: Shows file and line number where payloads originated
+    - **Displays Detection Source**: Shows module, function, and line range where vulnerability was detected
   - All report generation now works correctly for HTML, PDF, and JSON formats
   - Multilingual report generation fully functional
 
