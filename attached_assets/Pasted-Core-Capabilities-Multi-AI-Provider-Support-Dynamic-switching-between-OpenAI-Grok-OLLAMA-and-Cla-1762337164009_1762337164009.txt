@@ -1,0 +1,52 @@
+Core Capabilities
+Multi-AI Provider Support: Dynamic switching between OpenAI, Grok, OLLAMA, and Claude
+Intelligent Payload Generation: AI-powered, CVE-aware, context-sensitive payloads
+Comprehensive Scanning: 45+ attack methods with framework-specific tests
+Advanced Reconnaissance: Passive OSINT, DNS enumeration, subdomain discovery
+Professional Reporting: PDF/HTML/JSON reports with OSINT intelligence and executive summaries
+Collaborative Scanning: Team-based distributed scanning with session management
+Custom Plugin System: Extend Deep Eye with your own vulnerability scanners
+Multi-Channel Notifications: Real-time alerts via Email, Slack, and Discord
+Vulnerability Detection
+Core Vulnerabilities
+SQL Injection (Error-based, Blind, Time-based)
+Cross-Site Scripting (XSS)
+Command Injection
+SSRF (Server-Side Request Forgery)
+XXE (XML External Entity)
+Path Traversal
+CSRF (Cross-Site Request Forgery)
+Open Redirect
+CORS Misconfiguration
+Security Headers Analysis
+v1.3.0 Additional Vulnerabilities
+Local File Inclusion (LFI)
+Remote File Inclusion (RFI)
+Server-Side Template Injection (SSTI)
+CRLF Injection
+Host Header Injection
+LDAP Injection
+XML Injection
+Insecure Deserialization
+Authentication Bypass
+Information Disclosure
+Sensitive Data Exposure
+JWT Vulnerabilities
+Broken Authentication
+v1.1.0 Advanced Modules
+API Security Testing (OWASP API Top 10 2023)
+GraphQL Security (Introspection, Depth limits, Batch attacks)
+Business Logic Flaws (Price manipulation, Workflow bypass, Race conditions)
+Authentication Testing (Session management, JWT, OAuth, MFA bypass)
+File Upload Vulnerabilities (Unrestricted upload, Path traversal, Type bypass)
+Collaborative Scanning (Team-based distributed scanning)
+v1.2.0 Advanced Modules
+WebSocket Testing (Origin validation, Auth, Injection, DoS protection)
+ML-Based Anomaly Detection (Behavioral analysis, Pattern recognition)
+Interactive HTML Reports (Charts, Filtering, Real-time search)
+Enhanced OSINT (Google dorking, Breach databases, CT logs, GitHub/Pastebin)
+Advanced Payload Obfuscation (11+ techniques for WAF bypass)
+v1.3.0 New Features
+Custom Plugin System (Extend with your own scanners)
+Multi-Channel Notifications (Email, Slack, Discord alerts)
+Enhanced OSINT Reporting (Reconnaissance data in all reports)
