@@ -98,6 +98,28 @@ python deep_eye.py --version
 
 ## Recent Changes
 
+- **Vulnerability Digest Template Enhanced - November 5, 2025**
+  - Created comprehensive `templates/vulnerability_digest.html` template
+  - **Payload Display Enhancement**: Payloads now show with exact source tracking
+    - **Format**: "Payloads Used (Line 175):" displays the line number in the source file
+    - Shows complete payload code block with copy-to-clipboard functionality
+    - Displays payload source information:
+      - Source File: (e.g., `core/ai_payload_generator.py`)
+      - Line Number: (e.g., Line 175)
+      - Parameter: The attacked parameter name
+      - Context: Attack context description
+  - **Complete Attack Chain Visualization**:
+    - ⚡ Payload Used → Shows the exact attack payload
+    - 📍 Payload Source → Shows where it came from
+    - 📤 HTTP Request → Full request details
+    - 📥 HTTP Response → Full response details
+    - 🔬 Detection Source → Where vulnerability was detected
+    - 🔧 Remediation → How to fix it
+  - Matches the PortSwigger lab attack format exactly
+  - Beautiful, professional design with gradient backgrounds
+  - Interactive features: expandable sections, copy buttons
+  - All vulnerability details displayed in organized, color-coded cards
+
 - **Replit Migration Completed - November 5, 2025**
   - Successfully migrated Deep Eye Scanner to Replit environment
   - Python 3.11 installed and configured
