@@ -16,22 +16,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Deep Eye Scanner"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "Deep Eye Web GUI"
-
-[[workflows.workflow]]
-name = "Deep Eye Scanner"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python deep_eye.py --help"
 
 [[workflows.workflow]]
 name = "Deep Eye Web GUI"
@@ -47,10 +32,6 @@ outputType = "webview"
 
 [[ports]]
 localPort = 5000
-externalPort = 80
-
-[[ports]]
-localPort = 8888
 externalPort = 80
 
 [[ports]]
