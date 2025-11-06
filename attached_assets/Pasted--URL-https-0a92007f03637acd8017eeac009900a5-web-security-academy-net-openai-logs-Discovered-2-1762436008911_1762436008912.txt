@@ -1,0 +1,142 @@
+🌐 URL
+https://0a92007f03637acd8017eeac009900a5.web-security-academy.net/openai/logs
+🕐 Discovered
+2025-11-05 13:47:45
+📋 Description
+MIME sniffing protection missing
+
+🔍 Evidence
+Missing header: X-Content-Type-Options
+
+📤 HTTP Request
+Copy
+GET https://0a92007f03637acd8017eeac009900a5.web-security-academy.net/openai/logs
+User-Agent: Deep-Eye/1.0
+Accept-Encoding: gzip, deflate
+Accept: */*
+Connection: keep-alive
+Accept-Language: en-US,en;q=0.9
+Cookie: [REDACTED]
+
+📥 HTTP Response
+Status: 200 | Latency: 0.442s
+
+Copy
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href=/resources/labheader/css/academyLabHeader.css rel=stylesheet>
+        <link href=/resources/css/labs.css rel=stylesheet>
+        <title>Exploiting LLM APIs with excessive agency</title>
+    </head>
+        <script src="/resources/labheader/js/labHeader.js"></script>
+        <div id="academyLabHeader">
+            <section class='academyLabBanner'>
+                <div class=container>
+                    <div class=logo></div>
+            ...
+🔬 Detection Source - Where Vulnerability Was Detected in Scanner Code
+
+Module: core.vulnerability_scanner
+
+Function: _check_security_headers
+
+File: core/vulnerability_scanner.py (Lines 803-856)
+
+🔧 Remediation
+Priority: MEDIUM
+
+Estimated Fix Time: 1-2 days
+
+Steps to Fix:
+Add all missing security headers to HTTP responses
+Configure Content-Security-Policy to prevent XSS attacks
+Enable HTTP Strict Transport Security (HSTS)
+Disable directory listings and unnecessary HTTP methods
+Remove server version information from headers
+Configure secure session cookies (Secure, HttpOnly, SameSite)
+Disable debug mode and verbose errors in production
+Code Example:
+Copy
+# Bad (No security headers):
+@app.route('/page')
+def page():
+    return render_template('page.html')
+
+# Good (Secure headers - Python/Flask):
+from flask import Flask, make_response
+
+@app.after_request
+def add_security_headers(response):
+    # Prevent MIME sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'DENY'
+    
+    # Content Security Policy
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    
+    # Force HTTPS
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # XSS Protection
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Referrer Policy
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    
+    # Permissions Policy
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    
+    return response
+
+# Good (Secure headers - Django):
+# middleware.py
+class SecurityHeadersMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+    
+    def __call__(self, request):
+        response = self.get_response(request)
+        response['X-Content-Type-Options'] = 'nosniff'
+        response['X-Frame-Options'] = 'DENY'
+        response['Content-Security-Policy'] = "default-src 'self'"
+        response['Strict-Transport-Security'] = 'max-age=31536000'
+        return response
+
+# Good (Secure headers - Node.js/Express):
+const helmet = require('helmet');
+app.use(helmet());
+
+// Or manually:
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Content-Security-Policy', "default-src 'self'");
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+    next();
+});
+
+# Good (Apache .htaccess):
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Content-Security-Policy "default-src 'self'"
+    Header set Strict-Transport-Security "max-age=31536000"
+    Header unset Server
+    Header unset X-Powered-By
+</IfModule>
+
+# Good (Nginx):
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Content-Security-Policy "default-src 'self'" always;
+add_header Strict-Transport-Security "max-age=31536000" always;
+server_tokens off;
+📚 References:
+OWASP Security Headers Cheat Sheet
+CWE-16: Configuration
+https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
+https://securityheaders.com/
+https://owasp.org/www-project-secure-headers/
