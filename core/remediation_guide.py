@@ -21,6 +21,38 @@ class RemediationGuide:
                 'Enable SQL error logging but hide errors from users',
                 'Conduct code review of all database queries'
             ],
+            'vulnerable_code': '''# Python/Flask Application - VULNERABLE
+import sqlite3
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/user')
+def get_user():
+    user_id = request.args.get('id')
+    # VULNERABLE: String concatenation allows SQL injection
+    query = f"SELECT * FROM users WHERE id = {user_id}"
+    cursor.execute(query)
+    return cursor.fetchone()
+    
+# Attacker can inject: ?id=1 OR 1=1--
+# This bypasses authentication and returns all users''',
+            'solution_code': '''# Python/Flask Application - SECURE
+import sqlite3
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/user')
+def get_user():
+    user_id = request.args.get('id')
+    # SECURE: Parameterized query prevents SQL injection
+    query = "SELECT * FROM users WHERE id = ?"
+    cursor.execute(query, (user_id,))
+    return cursor.fetchone()
+    
+# Even if attacker sends ?id=1 OR 1=1--
+# The query treats it as a literal value, not SQL code''',
             'exploit_example': '''
 ATTACK SCENARIO - SQL Injection:
 1. Test the parameter with: ' OR 1=1--
@@ -83,6 +115,35 @@ SOLUTION:
                 'Implement context-aware output encoding (HTML, JavaScript, URL)',
                 'Use modern frameworks with built-in XSS protection'
             ],
+            'vulnerable_code': '''# Python/Flask Application - VULNERABLE
+from flask import Flask, request, render_template_string
+
+app = Flask(__name__)
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    # VULNERABLE: Direct rendering without escaping
+    html = f'<h1>Search Results for: {query}</h1>'
+    return render_template_string(html)
+    
+# Attacker payload: ?q=<script>alert(document.cookie)</script>
+# This executes JavaScript in victim's browser''',
+            'solution_code': '''# Python/Flask Application - SECURE
+from flask import Flask, request, render_template_string
+from markupsafe import escape
+
+app = Flask(__name__)
+
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+    # SECURE: Escape user input before rendering
+    html = f'<h1>Search Results for: {escape(query)}</h1>'
+    return render_template_string(html)
+    
+# Attacker payload is now escaped: &lt;script&gt;alert(document.cookie)&lt;/script&gt;
+# Displays as text, not executed as code''',
             'exploit_example': '''
 ATTACK SCENARIO - Reflected XSS:
 1. On the Submit feedback page, change the query parameter returnPath to / followed by a random alphanumeric string
@@ -139,6 +200,43 @@ SOLUTION:
                 'Run application with minimal privileges',
                 'Implement command execution logging and monitoring'
             ],
+            'vulnerable_code': '''# Python Application - VULNERABLE
+import os
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/ping')
+def ping():
+    ip = request.args.get('ip')
+    # VULNERABLE: Direct shell command execution
+    result = os.system(f"ping -c 4 {ip}")
+    return f"Ping result: {result}"
+    
+# Attacker payload: ?ip=8.8.8.8; cat /etc/passwd
+# This executes both ping AND reads sensitive files''',
+            'solution_code': '''# Python Application - SECURE
+import subprocess
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/ping')
+def ping():
+    ip = request.args.get('ip')
+    # SECURE: Use subprocess with argument list
+    try:
+        result = subprocess.run(
+            ["ping", "-c", "4", ip],
+            capture_output=True,
+            timeout=5
+        )
+        return f"Ping result: {result.stdout.decode()}"
+    except subprocess.TimeoutExpired:
+        return "Ping timeout"
+    
+# Attacker payload is treated as a literal argument
+# Commands like ; cat /etc/passwd won't be executed''',
             'code_example': '''
 # Bad (Vulnerable):
 os.system(f"ping {user_ip}")
@@ -1708,8 +1806,11 @@ ERROR CODE REFERENCE:
         if 'references' in remediation_details:
             vulnerability['references'] = remediation_details['references']
         
-        # Preserve vulnerable_code and solution_code if present (for color-coded comparison)
-        # These fields are already in the vulnerability dict, just make sure they're accessible
+        # Copy vulnerable_code and solution_code for color-coded comparison (if not already present)
+        if 'vulnerable_code' not in vulnerability and 'vulnerable_code' in remediation_details:
+            vulnerability['vulnerable_code'] = remediation_details['vulnerable_code']
+        if 'solution_code' not in vulnerability and 'solution_code' in remediation_details:
+            vulnerability['solution_code'] = remediation_details['solution_code']
         
         # Keep original remediation as summary
         if 'remediation' not in vulnerability or not vulnerability['remediation']:

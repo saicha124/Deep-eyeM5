@@ -98,21 +98,34 @@ python deep_eye.py --version
 
 ## Recent Changes
 
+- **🎨 Code Comparison Now Available for ALL Vulnerabilities - November 6, 2025**
+  - **Extended to All Major Vulnerability Types**: Code comparison now available for:
+    - ✅ **SQL Injection**: Shows vulnerable string concatenation vs secure parameterized queries
+    - ✅ **Cross-Site Scripting (XSS)**: Shows unescaped output vs properly escaped HTML
+    - ✅ **Command Injection**: Shows os.system() vulnerability vs secure subprocess usage
+    - ✅ **Security Misconfiguration**: Shows missing headers vs framework-specific implementations
+  - **Black Text on Colored Backgrounds**: Fixed text color for better readability
+    - Code blocks now display in black (#000000) on light colored backgrounds
+    - Ensures maximum contrast and readability for all code examples
+  - **Automatic Enhancement**: All vulnerabilities automatically get code examples through remediation guide
+    - No need to manually add code examples to each scanner
+    - Remediation database provides consistent, high-quality examples
+    - Template displays code comparison for any vulnerability with these fields
+  - **Framework-Specific Examples**: Each vulnerability type includes real-world code:
+    - SQL Injection: Python/Flask with SQLite
+    - XSS: Python/Flask with template rendering
+    - Command Injection: Python/Flask with subprocess
+    - Security Headers: Flask, Express.js, Nginx, Django, Apache
+
 - **✅ Color-Coded Solution Display Fully Working - November 5, 2025**
   - **Vulnerable vs Solution Code Comparison**: Reports now show side-by-side code comparison
   - **Visual Color Distinction**:
-    - **❌ Vulnerable Code**: Displayed in RED (light red background #fff5f5, red border #e53e3e)
-    - **✅ Solution Code**: Displayed in GREEN (light green background #f0fff4, green border #38a169)
+    - **❌ Vulnerable Code**: Displayed with RED border (light red background #fed7d7, red border #fc8181)
+    - **✅ Solution Code**: Displayed with GREEN border (light green background #c6f6d5, green border #68d391)
     - **Side-by-side layout** on desktop, stacked on mobile devices
-  - **Framework-Specific Examples** for Security Headers (5 complete implementations):
-    - **Flask**: X-Frame-Options using `@app.after_request` decorator
-    - **Express.js**: X-Content-Type-Options using `helmet.noSniff()` middleware
-    - **Nginx**: Strict-Transport-Security (HSTS) server configuration
-    - **Django**: Content-Security-Policy middleware in settings.py
-    - **Apache**: X-XSS-Protection header in `.htaccess` file
   - **📊 Code Comparison Section** in reports (tested and working):
-    - Left side: Vulnerable code showing the security issue (RED background)
-    - Right side: Fixed code showing the proper implementation (GREEN background)
+    - Left side: Vulnerable code showing the security issue (RED background, BLACK text)
+    - Right side: Fixed code showing the proper implementation (GREEN background, BLACK text)
     - Both sides have interactive copy-to-clipboard buttons
     - Clear visual distinction makes it easy to understand the fix
   - **Technical Implementation**:
@@ -120,7 +133,6 @@ python deep_eye.py --version
     - `vulnerable_code` and `solution_code` fields added to vulnerability objects
     - Template correctly displays code comparison for all vulnerabilities
     - Fields preserved through `enhance_vulnerability()` pipeline
-  - **Verified Working**: Tested with example.com scan - all 5 security header vulnerabilities display color-coded comparison
   - **Benefit**: Developers can instantly see what needs to be fixed and copy the solution code
 
 - **Detection Code Display Enhanced - November 5, 2025**
