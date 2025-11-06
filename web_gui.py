@@ -242,11 +242,27 @@ def start_scan():
         
         from core.scanner_engine import ScannerEngine
         from utils.config_loader import ConfigLoader
+        from ai_providers.provider_manager import AIProviderManager
         
         config = ConfigLoader.load('config/config.yaml')
         
-        scanner = ScannerEngine(config)
-        results = scanner.scan(target_url)
+        scanner_config = config.get('scanner', {})
+        ai_provider = scanner_config.get('ai_provider', 'openai')
+        depth = scanner_config.get('default_depth', 2)
+        threads = scanner_config.get('default_threads', 5)
+        
+        ai_manager = AIProviderManager(config)
+        ai_manager.set_provider(ai_provider)
+        
+        scanner = ScannerEngine(
+            target_url=target_url,
+            config=config,
+            ai_manager=ai_manager,
+            depth=depth,
+            threads=threads
+        )
+        
+        results = scanner.scan()
         
         vulnerabilities = []
         for vuln in results.get('vulnerabilities', []):
