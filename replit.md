@@ -98,16 +98,33 @@ python deep_eye.py --version
 
 ## Recent Changes
 
-- **🎨 Code Comparison Now Available for 8 Major Vulnerability Types - November 6, 2025**
-  - **Extended to All Critical Vulnerability Types**: Code comparison now available for:
-    - ✅ **SQL Injection**: Shows vulnerable string concatenation vs secure parameterized queries
-    - ✅ **Cross-Site Scripting (XSS)**: Shows unescaped output vs properly escaped HTML
-    - ✅ **Command Injection**: Shows os.system() vulnerability vs secure subprocess usage
-    - ✅ **Security Misconfiguration**: Shows missing headers vs framework-specific implementations
-    - ✅ **Business Logic - Price Manipulation**: Shows client-side price trust vs server-side validation
-    - ✅ **Business Logic - Negative Quantity**: Shows no validation vs proper quantity checks
-    - ✅ **Path Traversal**: Shows direct path concatenation vs secure path validation
-    - ✅ **SSRF (Server-Side Request Forgery)**: Shows unrestricted URL fetching vs whitelist validation
+- **🎉 Code Comparison Now Available for ALL 25 Vulnerability Types - November 6, 2025**
+  - **Complete Coverage**: Code comparison now available for EVERY vulnerability type Deep Eye can detect:
+    - ✅ **SQL Injection**: String concatenation vs parameterized queries
+    - ✅ **Cross-Site Scripting (XSS)**: Unescaped output vs HTML escaping
+    - ✅ **Command Injection**: os.system() vs subprocess module
+    - ✅ **CSRF**: No token protection vs CSRF token validation
+    - ✅ **SSRF**: Unrestricted URL fetching vs whitelist validation
+    - ✅ **Path Traversal**: Direct path concatenation vs secure validation
+    - ✅ **Authentication Bypass**: Weak hashing vs bcrypt
+    - ✅ **JWT Vulnerabilities**: No signature verification vs proper validation
+    - ✅ **Insecure Deserialization**: pickle.loads() vs json.loads()
+    - ✅ **XXE**: Default XML parser vs defusedxml
+    - ✅ **Information Disclosure**: Debug mode enabled vs custom error handlers
+    - ✅ **LFI (Local File Inclusion)**: Direct file inclusion vs whitelist
+    - ✅ **RFI (Remote File Inclusion)**: Remote file inclusion vs whitelist
+    - ✅ **SSTI (Server-Side Template Injection)**: User input in template vs template variables
+    - ✅ **CRLF Injection**: Unvalidated headers vs CRLF filtering
+    - ✅ **Open Redirect**: Unvalidated redirect vs whitelist validation
+    - ✅ **CORS Misconfiguration**: Wildcard origins vs specific origin validation
+    - ✅ **Sensitive Data Exposure**: All fields exposed vs selective fields
+    - ✅ **Broken Authentication**: No rate limiting vs rate limiting and lockout
+    - ✅ **Security Misconfiguration**: Missing headers vs all security headers
+    - ✅ **Business Logic - Price Manipulation**: Client-side price vs server-side validation
+    - ✅ **Business Logic - Negative Quantity**: No validation vs quantity checks
+    - ✅ **Business Logic - Excessive Quantity**: No limits vs quantity limits
+    - ✅ **Business Logic - Workflow Bypass**: No state validation vs workflow state checks
+    - ✅ **Business Logic - Race Condition**: No locking vs database transaction locking
   - **Black Text on Colored Backgrounds**: Fixed text color for better readability
     - Code blocks now display in black (#000000) on light colored backgrounds
     - Ensures maximum contrast and readability for all code examples
