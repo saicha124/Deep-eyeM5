@@ -10,9 +10,13 @@ I prefer iterative development with clear, concise communication. Please ask bef
 Deep Eye is a command-line security testing tool written in Python 3.11. Its core engine is designed for AI-powered vulnerability detection.
 
 **UI/UX Decisions:**
-- **Web GUI (New):** Modern web interface for managing AI provider API keys and settings, featuring a beautiful gradient design, master AI toggle, individual provider controls, and secure encrypted key storage.
+- **Web GUI:** Modern web interface with two main pages:
+  - **Settings Page:** Manage AI provider API keys and settings, featuring a beautiful gradient design, master AI toggle, individual provider controls, and secure encrypted key storage.
+  - **Scanner Page:** User-friendly interface for entering target URLs, initiating scans, viewing real-time results, and downloading professional HTML reports.
+- **Navigation:** Seamless navigation between Settings and Scanner pages via header links.
+- **Scan Results Display:** Interactive vulnerability cards with color-coded severity badges (Critical, High, Medium, Low), summary statistics dashboard, and expandable details.
 - **Report Design:** Professional, clean design with gradient backgrounds, white content cards, and a focus on readability.
-- **Vulnerability Digest:** Features interactive expandable/collapsible cards, color-coded severity badges (Critical, High, Medium, Low), and copy-to-clipboard functionality for code blocks.
+- **Vulnerability Digest:** Features interactive expandable/collapsible cards, color-coded severity badges, and copy-to-clipboard functionality for code blocks.
 - **Code Comparison:** Side-by-side comparison of vulnerable code (red border) and solution code (green border) with black text for maximum contrast.
 - **Multi-language Support:** Reports can be generated in English, French, and Arabic.
 - **Branding:** Incorporates a professional SVG vector logo for CERIST, including a shield icon and gradient design.
@@ -32,7 +36,14 @@ Deep Eye is a command-line security testing tool written in Python 3.11. Its cor
 - **Modular Structure:** Organized into `core/`, `ai_providers/`, `modules/`, `utils/`, `config/`, `templates/`, `reports/`, `logs/`, and `data/` directories for maintainability.
 - **Configuration Management:** Centralized `config/config.yaml` for scanner settings, vulnerability checks, report formats, and network settings.
 - **Secret Management (New):** Centralized encryption/decryption module (`utils/secret_manager.py`) using Fernet encryption. All API keys are stored encrypted in `.env` file and automatically decrypted when needed by the application or config loader.
-- **Web GUI:** Flask-based web interface (`web_gui.py`) for managing AI provider settings, accessible at port 5000 with secure API key management and connection testing.
+- **Web GUI:** Flask-based web interface (`web_gui.py`) with comprehensive functionality:
+  - Settings management for AI provider API keys with connection testing
+  - Scanner interface for entering URLs and initiating vulnerability scans
+  - Real-time scan results display with interactive vulnerability cards
+  - JSON storage of scan results in `reports/` directory
+  - HTML report generation and download functionality
+  - SSRF protection with DNS resolution and private IP blocking
+  - RESTful API endpoints: POST /api/scan, GET /api/scans/<scan_id>, GET /api/download-report/<scan_id>
 - **Automated Code Snippet Extraction:** Automatically extracts and displays relevant scanner code snippets in reports, showing exactly how vulnerabilities were detected.
 - **Standardized Vulnerability Schema:** A well-defined schema for vulnerability attributes, including timestamps, priority levels, fix time estimates, and references.
 
@@ -46,9 +57,23 @@ Deep Eye is a command-line security testing tool written in Python 3.11. Its cor
 - **CLI Tools:** `click`, `rich`, `tqdm`, `colorama`
 
 ## Recent Changes (November 2025)
+
+### Session 1: AI Settings Interface
 - **Web GUI Added**: Created a modern web interface for managing AI provider API keys and settings
 - **Secure API Key Storage**: Implemented Fernet encryption for all API keys stored in environment variables
 - **Centralized Secret Management**: Created `utils/secret_manager.py` for encryption/decryption across the application
 - **Config Loader Enhancement**: Updated to automatically decrypt environment variables when loading configuration
 - **Grok Provider Testing**: Added real API connection testing for Grok provider using xAI endpoints
 - **Package Updates**: Updated to specific versions: beautifulsoup4==4.12.3, dnspython==2.6.1, requests==2.31.0, urllib3==2.2.2
+
+### Session 2: Vulnerability Scanner Interface
+- **Scanner Page Added**: Created `templates/scanner.html` with URL input form and real-time results display
+- **Scan API Endpoints**: Implemented POST /api/scan, GET /api/scans/<scan_id>, and GET /api/download-report/<scan_id>
+- **SSRF Protection**: Comprehensive URL validation with DNS resolution to block localhost, private IPs, link-local, reserved, and multicast addresses
+- **Scan Results Storage**: JSON storage in `reports/` directory for persistent scan history
+- **Interactive Results Display**: Vulnerability cards with severity badges, summary statistics, and expandable details
+- **Navigation**: Added header navigation between Settings and Scanner pages
+- **Report Downloads**: HTML report generation and download functionality
+
+## Known Limitations
+- **DNS Rebinding Protection**: While URL validation resolves DNS and blocks private IPs at validation time, there's a theoretical TOCTOU (time-of-check/time-of-use) gap where DNS could change between validation and the actual scan. Complete mitigation would require modifying the core scanner engine to use validated IPs directly.
