@@ -160,6 +160,11 @@ def scanner():
     """Render the scanner page"""
     return render_template('scanner.html')
 
+@app.route('/report')
+def report():
+    """Render the detailed report page"""
+    return render_template('report.html')
+
 def validate_url(url):
     """
     Validate and sanitize URL to prevent SSRF and other attacks
