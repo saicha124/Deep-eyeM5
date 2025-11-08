@@ -234,6 +234,12 @@ def run_scan_background(scan_id, target_url):
     from utils.config_loader import ConfigLoader
     from ai_providers.provider_manager import AIProviderManager
     
+    def update_progress(progress, vulnerability_count, message):
+        """Callback to update scan progress in real-time"""
+        scan_status[scan_id]['progress'] = progress
+        scan_status[scan_id]['vulnerability_count'] = vulnerability_count
+        scan_status[scan_id]['message'] = message
+    
     try:
         scan_status[scan_id]['status'] = 'running'
         scan_status[scan_id]['message'] = 'Initializing scanner...'
@@ -248,19 +254,14 @@ def run_scan_background(scan_id, target_url):
         ai_manager = AIProviderManager(config)
         ai_manager.set_provider(ai_provider)
         
-        scan_status[scan_id]['message'] = 'Starting vulnerability scan...'
-        scan_status[scan_id]['progress'] = 30
-        
         scanner = ScannerEngine(
             target_url=target_url,
             config=config,
             ai_manager=ai_manager,
             depth=depth,
-            threads=threads
+            threads=threads,
+            progress_callback=update_progress
         )
-        
-        scan_status[scan_id]['message'] = 'Crawling website and scanning for vulnerabilities... (This may take a few minutes)'
-        scan_status[scan_id]['progress'] = 40
         
         results = scanner.scan()
         

@@ -40,7 +40,8 @@ class ScannerEngine:
         proxy: Optional[str] = None,
         custom_headers: Optional[Dict] = None,
         cookies: Optional[Dict] = None,
-        verbose: bool = False
+        verbose: bool = False,
+        progress_callback: Optional[callable] = None
     ):
         """Initialize the scanner engine."""
         self.target_url = target_url
@@ -49,6 +50,7 @@ class ScannerEngine:
         self.depth = depth
         self.threads = threads
         self.verbose = verbose
+        self.progress_callback = progress_callback
         
         # Initialize components
         self.http_client = HTTPClient(
@@ -165,6 +167,14 @@ class ScannerEngine:
                     task,
                     description=f"[cyan]Crawling... Found {len(all_urls)} URLs"
                 )
+                
+                if self.progress_callback:
+                    crawl_progress = min(30, 10 + int((len(all_urls) / max(len(all_urls), 10)) * 20))
+                    self.progress_callback(
+                        progress=crawl_progress,
+                        vulnerability_count=0,
+                        message=f"Crawling website... Found {len(all_urls)} URLs"
+                    )
         
         console.print(f"[green]✓[/green] Crawling complete. Found {len(all_urls)} URLs\n")
         return all_urls
@@ -255,6 +265,17 @@ class ScannerEngine:
                             task,
                             description=f"[cyan]Scanning... {len(self.vulnerabilities)} vulnerabilities found"
                         )
+                        
+                        if self.progress_callback:
+                            completed = task.completed if hasattr(task, 'completed') else progress.tasks[0].completed
+                            total = len(urls)
+                            percent = int((completed / total) * 100) if total > 0 else 0
+                            actual_progress = 40 + int(percent * 0.5)
+                            self.progress_callback(
+                                progress=actual_progress,
+                                vulnerability_count=len(self.vulnerabilities),
+                                message=f"Scanning... {len(self.vulnerabilities)} vulnerabilities found"
+                            )
                         
                     except Exception as e:
                         logger.error(f"Error processing {url}: {e}")
