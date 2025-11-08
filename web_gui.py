@@ -402,9 +402,40 @@ def get_scan_results(scan_id):
     except Exception as e:
         return jsonify({'success': False, 'message': f'Failed to retrieve scan: {str(e)}'}), 500
 
+@app.route('/api/scans', methods=['GET'])
+def list_scans():
+    """List all available scan reports"""
+    try:
+        reports_dir = Path('reports')
+        if not reports_dir.exists():
+            return jsonify({'success': True, 'scans': []})
+        
+        scans = []
+        for scan_file in reports_dir.glob('scan_*.json'):
+            try:
+                with open(scan_file, 'r') as f:
+                    scan_data = json.load(f)
+                
+                scan_id = scan_file.stem.replace('scan_', '')
+                scans.append({
+                    'scan_id': scan_id,
+                    'target_url': scan_data.get('target_url'),
+                    'timestamp': scan_data.get('timestamp'),
+                    'total_vulnerabilities': len(scan_data.get('vulnerabilities', []))
+                })
+            except Exception as e:
+                logger.error(f"Error reading scan file {scan_file}: {e}")
+                continue
+        
+        scans.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        return jsonify({'success': True, 'scans': scans})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to list scans: {str(e)}'}), 500
+
 @app.route('/api/download-report/<scan_id>')
 def download_report(scan_id):
-    """Download scan report"""
+    """Download scan report as HTML"""
     from flask import send_file
     
     try:
@@ -434,6 +465,55 @@ def download_report(scan_id):
             
     except Exception as e:
         return jsonify({'success': False, 'message': f'Failed to generate report: {str(e)}'}), 500
+
+@app.route('/api/export/<scan_id>/<format>')
+def export_report(scan_id, format):
+    """Export scan report in various formats (json, csv)"""
+    from flask import send_file, make_response
+    import csv
+    from io import StringIO
+    
+    try:
+        scan_file = Path('reports') / f'scan_{scan_id}.json'
+        
+        if not scan_file.exists():
+            return jsonify({'success': False, 'message': 'Scan not found'}), 404
+        
+        with open(scan_file, 'r') as f:
+            scan_data = json.load(f)
+        
+        if format == 'json':
+            response = make_response(json.dumps(scan_data, indent=2))
+            response.headers['Content-Type'] = 'application/json'
+            response.headers['Content-Disposition'] = f'attachment; filename=scan_{scan_id}.json'
+            return response
+        
+        elif format == 'csv':
+            output = StringIO()
+            writer = csv.writer(output)
+            
+            writer.writerow(['Vulnerability Name', 'Severity', 'URL', 'Description', 'CWE', 'Remediation'])
+            
+            for vuln in scan_data.get('vulnerabilities', []):
+                writer.writerow([
+                    vuln.get('name', 'Unknown'),
+                    vuln.get('severity', 'info'),
+                    vuln.get('url', ''),
+                    vuln.get('description', ''),
+                    vuln.get('cwe', ''),
+                    vuln.get('remediation', '')
+                ])
+            
+            response = make_response(output.getvalue())
+            response.headers['Content-Type'] = 'text/csv'
+            response.headers['Content-Disposition'] = f'attachment; filename=scan_{scan_id}.csv'
+            return response
+        
+        else:
+            return jsonify({'success': False, 'message': 'Invalid format. Supported: json, csv'}), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to export report: {str(e)}'}), 500
 
 if __name__ == '__main__':
     print("\n🌐 Starting Deep Eye Web GUI...")
