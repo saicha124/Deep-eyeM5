@@ -269,6 +269,7 @@ def run_scan_background(scan_id, target_url):
         
         vulnerabilities = []
         for vuln in results.get('vulnerabilities', []):
+            scan_status[scan_id]['vulnerability_count'] = len(vulnerabilities) + 1
             vulnerabilities.append({
                 'name': vuln.get('type', vuln.get('name', 'Unknown Vulnerability')),
                 'severity': vuln.get('severity', 'info').lower(),
@@ -309,6 +310,7 @@ def run_scan_background(scan_id, target_url):
         scan_status[scan_id]['status'] = 'completed'
         scan_status[scan_id]['message'] = f'Scan completed! Found {len(vulnerabilities)} vulnerabilities'
         scan_status[scan_id]['progress'] = 100
+        scan_status[scan_id]['vulnerability_count'] = len(vulnerabilities)
         scan_status[scan_id]['results'] = {
             'target_url': target_url,
             'vulnerabilities': vulnerabilities,
@@ -343,6 +345,7 @@ def start_scan():
         'status': 'starting',
         'message': 'Scan queued...',
         'progress': 0,
+        'vulnerability_count': 0,
         'results': None
     }
     
@@ -368,6 +371,8 @@ def get_scan_progress(scan_id):
         'scan_id': scan_id,
         'status': status['status'],
         'message': status['message'],
+        'progress': status.get('progress', 0),
+        'vulnerability_count': status.get('vulnerability_count', 0),
         'results': status.get('results')
     })
 
