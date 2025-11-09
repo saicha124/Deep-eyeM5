@@ -179,6 +179,90 @@
             padding: 40px;
             color: #666;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 900px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #f0f0f0;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-item:hover {
+            background: #e9ecef;
+        }
+
+        .scan-count-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -205,10 +289,23 @@
         </div>
     </div>
 
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📜 Scan History</h2>
+                <span class="close" onclick="closeHistoryModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="modal-url" style="margin-bottom: 20px; color: #666;"></p>
+                <div id="history-list"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         async function loadReports() {
             try {
-                const response = await fetch('/api/scans');
+                const response = await fetch('/api/scans/grouped');
                 const data = await response.json();
 
                 document.getElementById('loading').style.display = 'none';
@@ -228,14 +325,20 @@
             const reportsHtml = scans.map(scan => {
                 const date = new Date(scan.timestamp);
                 const formattedDate = date.toLocaleString();
+                const scanCountBadge = scan.scan_count > 1 
+                    ? `<span class="scan-count-badge">${scan.scan_count} scans</span>` 
+                    : '';
 
                 return `
                     <div class="report-card">
                         <div class="report-header">
                             <div>
-                                <div class="report-title">${escapeHtml(scan.target_url)}</div>
+                                <div class="report-title">
+                                    ${escapeHtml(scan.target_url)}
+                                    ${scanCountBadge}
+                                </div>
                                 <div class="report-meta">
-                                    Scan ID: ${escapeHtml(scan.scan_id)} | ${formattedDate}
+                                    Latest Scan ID: ${escapeHtml(scan.scan_id)} | ${formattedDate}
                                 </div>
                                 <div class="report-stats">
                                     <div class="stat">
@@ -245,10 +348,13 @@
                                 </div>
                             </div>
                             <div>
-                                <a href="/view-report/${scan.scan_id}" target="_blank" class="btn btn-primary">📋 View Detailed Report</a>
-                                <a href="/api/download-report/${scan.scan_id}" class="btn btn-secondary">Download HTML</a>
-                                <a href="/api/export/${scan.scan_id}/json" class="btn btn-secondary">JSON</a>
-                                <a href="/api/export/${scan.scan_id}/csv" class="btn btn-secondary">CSV</a>
+                                <a href="/view-report/${scan.scan_id}" target="_blank" class="btn btn-primary">📋 View Latest Report</a>
+                                ${scan.scan_count > 1 
+                                    ? `<button onclick="showScanHistory('${escapeHtml(scan.target_url)}')" class="btn btn-secondary">📜 View Scan History</button>` 
+                                    : ''}
+                                <a href="/api/download-report/${scan.scan_id}" class="btn btn-secondary btn-small">HTML</a>
+                                <a href="/api/export/${scan.scan_id}/json" class="btn btn-secondary btn-small">JSON</a>
+                                <a href="/api/export/${scan.scan_id}/csv" class="btn btn-secondary btn-small">CSV</a>
                             </div>
                         </div>
                     </div>
@@ -256,6 +362,69 @@
             }).join('');
 
             document.getElementById('reports-list').innerHTML = reportsHtml;
+        }
+
+        async function showScanHistory(url) {
+            try {
+                document.getElementById('modal-url').textContent = `URL: ${url}`;
+                document.getElementById('history-list').innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Loading scan history...</div>';
+                document.getElementById('historyModal').style.display = 'block';
+
+                const response = await fetch('/api/scans/history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                const data = await response.json();
+
+                if (data.success && data.scans && data.scans.length > 0) {
+                    displayScanHistory(data.scans);
+                } else {
+                    document.getElementById('history-list').innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No scan history found for this URL.</div>';
+                }
+            } catch (error) {
+                document.getElementById('history-list').innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Failed to load scan history. Please try again.</div>';
+            }
+        }
+
+        function displayScanHistory(scans) {
+            const historyHtml = scans.map((scan, index) => {
+                const date = new Date(scan.timestamp);
+                const formattedDate = date.toLocaleString();
+                const label = index === 0 ? '<strong>(Latest)</strong>' : '';
+
+                return `
+                    <div class="history-item">
+                        <div>
+                            <div style="font-weight: 600;">Scan ID: ${escapeHtml(scan.scan_id)} ${label}</div>
+                            <div style="color: #666; font-size: 14px; margin-top: 5px;">
+                                ${formattedDate} | ${scan.total_vulnerabilities} vulnerabilities
+                            </div>
+                        </div>
+                        <div>
+                            <a href="/view-report/${scan.scan_id}" target="_blank" class="btn btn-primary btn-small">View Report</a>
+                            <a href="/api/download-report/${scan.scan_id}" class="btn btn-secondary btn-small">HTML</a>
+                            <a href="/api/export/${scan.scan_id}/json" class="btn btn-secondary btn-small">JSON</a>
+                            <a href="/api/export/${scan.scan_id}/csv" class="btn btn-secondary btn-small">CSV</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('history-list').innerHTML = historyHtml;
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('historyModal');
+            if (event.target == modal) {
+                closeHistoryModal();
+            }
         }
 
         function displayEmptyState() {

@@ -128,10 +128,10 @@ logs/
 *.log
 data/
 *.db
-reports/
+reports/*.json
+reports/*.html
+reports/*.pdf
 *.pdf
-*.html
-*.json
 .DS_Store
 .vscode/
 .idea/

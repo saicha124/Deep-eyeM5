@@ -467,6 +467,7 @@ def list_scans():
                     'total_vulnerabilities': len(scan_data.get('vulnerabilities', []))
                 })
             except Exception as e:
+                from utils.logger import logger
                 logger.error(f"Error reading scan file {scan_file}: {e}")
                 continue
         
@@ -475,6 +476,93 @@ def list_scans():
         return jsonify({'success': True, 'scans': scans})
     except Exception as e:
         return jsonify({'success': False, 'message': f'Failed to list scans: {str(e)}'}), 500
+
+@app.route('/api/scans/grouped', methods=['GET'])
+def list_scans_grouped():
+    """List scans grouped by URL, showing only the latest scan per URL"""
+    try:
+        reports_dir = Path('reports')
+        if not reports_dir.exists():
+            return jsonify({'success': True, 'scans': []})
+        
+        url_scans = {}
+        
+        for scan_file in reports_dir.glob('scan_*.json'):
+            try:
+                with open(scan_file, 'r') as f:
+                    scan_data = json.load(f)
+                
+                scan_id = scan_file.stem.replace('scan_', '')
+                target_url = scan_data.get('target_url', '')
+                timestamp = scan_data.get('timestamp', '')
+                
+                scan_info = {
+                    'scan_id': scan_id,
+                    'target_url': target_url,
+                    'timestamp': timestamp,
+                    'total_vulnerabilities': len(scan_data.get('vulnerabilities', []))
+                }
+                
+                if target_url not in url_scans:
+                    url_scans[target_url] = []
+                url_scans[target_url].append(scan_info)
+                
+            except Exception as e:
+                from utils.logger import logger
+                logger.error(f"Error reading scan file {scan_file}: {e}")
+                continue
+        
+        grouped_scans = []
+        for target_url, scans in url_scans.items():
+            scans.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            latest_scan = scans[0]
+            latest_scan['scan_count'] = len(scans)
+            grouped_scans.append(latest_scan)
+        
+        grouped_scans.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        return jsonify({'success': True, 'scans': grouped_scans})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to list grouped scans: {str(e)}'}), 500
+
+@app.route('/api/scans/history', methods=['POST'])
+def get_scan_history():
+    """Get scan history for a specific URL"""
+    try:
+        data = request.json
+        target_url = data.get('url', '').strip()
+        
+        if not target_url:
+            return jsonify({'success': False, 'message': 'URL is required'}), 400
+        
+        reports_dir = Path('reports')
+        if not reports_dir.exists():
+            return jsonify({'success': True, 'scans': []})
+        
+        scans = []
+        for scan_file in reports_dir.glob('scan_*.json'):
+            try:
+                with open(scan_file, 'r') as f:
+                    scan_data = json.load(f)
+                
+                if scan_data.get('target_url') == target_url:
+                    scan_id = scan_file.stem.replace('scan_', '')
+                    scans.append({
+                        'scan_id': scan_id,
+                        'target_url': scan_data.get('target_url'),
+                        'timestamp': scan_data.get('timestamp'),
+                        'total_vulnerabilities': len(scan_data.get('vulnerabilities', []))
+                    })
+            except Exception as e:
+                from utils.logger import logger
+                logger.error(f"Error reading scan file {scan_file}: {e}")
+                continue
+        
+        scans.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        return jsonify({'success': True, 'scans': scans, 'url': target_url})
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to get scan history: {str(e)}'}), 500
 
 @app.route('/api/download-report/<scan_id>')
 def download_report(scan_id):
