@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Eye - Scan Reports</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            margin: -20px -20px 30px -20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+        }
+        
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        
+        .scan-list {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .scan-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .scan-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+        
+        .scan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .scan-url {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            word-break: break-all;
+        }
+        
+        .scan-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .scan-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .scan-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 60px 20px;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .detail-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .detail-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            background: #f5f5f5;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        
+        .close-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .vuln-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .vuln-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .vuln-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .severity-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-critical {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+        
+        .badge-high {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        
+        .badge-medium {
+            background: #fffde7;
+            color: #f9a825;
+        }
+        
+        .badge-low {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .badge-info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .vuln-details {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Deep Eye - Scan Reports</h1>
+        <div class="nav-links">
+            <a href="/">⚙️ Settings</a>
+            <a href="/scanner">🔍 Scanner</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Past Scan Reports</h2>
+            <div id="scan-list" class="scan-list">
+                <div class="loading">Loading scan reports...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="detail-modal" class="detail-modal">
+        <div class="detail-content">
+            <div class="detail-header">
+                <h2 id="detail-title">Scan Details</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div id="detail-body"></div>
+        </div>
+    </div>
+    
+    <script>
+        let scans = [];
+        
+        function loadScans() {
+            fetch('/api/scans')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        scans = data.scans;
+                        displayScans(scans);
+                    } else {
+                        showError('Failed to load scans');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading scans:', err);
+                    showError('Failed to load scans');
+                });
+        }
+        
+        function displayScans(scanList) {
+            const container = document.getElementById('scan-list');
+            
+            if (scanList.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <h3>No scan reports yet</h3>
+                        <p>Run your first scan from the Scanner page to see reports here.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = scanList.map(scan => `
+                <div class="scan-item" onclick="viewScanDetails('${scan.scan_id}')">
+                    <div class="scan-header">
+                        <div class="scan-url">${escapeHtml(scan.target_url)}</div>
+                        <span class="scan-badge">${scan.total_vulnerabilities} vulns</span>
+                    </div>
+                    <div class="scan-meta">
+                        📅 ${formatDate(scan.timestamp)} | 🆔 ${scan.scan_id}
+                    </div>
+                    <div class="scan-actions" onclick="event.stopPropagation()">
+                        <button class="btn-primary" onclick="downloadReport('${scan.scan_id}', 'html')">
+                            📥 HTML
+                        </button>
+                        <button class="btn-secondary" onclick="downloadReport('${scan.scan_id}', 'json')">
+                            📄 JSON
+                        </button>
+                        <button class="btn-secondary" onclick="downloadReport('${scan.scan_id}', 'csv')">
+                            📊 CSV
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function viewScanDetails(scanId) {
+            fetch(`/api/scans/${scanId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showDetailModal(data.results);
+                    }
+                })
+                .catch(err => console.error('Error loading scan details:', err));
+        }
+        
+        function showDetailModal(results) {
+            const modal = document.getElementById('detail-modal');
+            const title = document.getElementById('detail-title');
+            const body = document.getElementById('detail-body');
+            
+            title.textContent = `Scan Results: ${results.target_url}`;
+            
+            const vulnerabilities = results.vulnerabilities || [];
+            
+            body.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <strong>Total Vulnerabilities:</strong> ${vulnerabilities.length}<br>
+                    <strong>Scanned:</strong> ${formatDate(results.timestamp)}
+                </div>
+                ${vulnerabilities.map(vuln => `
+                    <div class="vuln-card">
+                        <div class="vuln-header">
+                            <div class="vuln-name">${escapeHtml(vuln.name || 'Unknown Vulnerability')}</div>
+                            <span class="severity-badge badge-${(vuln.severity || 'info').toLowerCase()}">${vuln.severity || 'info'}</span>
+                        </div>
+                        <div class="vuln-details">
+                            <p><strong>Description:</strong> ${escapeHtml(vuln.description || 'No description available')}</p>
+                            ${vuln.url ? `<p><strong>URL:</strong> ${escapeHtml(vuln.url)}</p>` : ''}
+                            ${vuln.cwe ? `<p><strong>CWE:</strong> ${escapeHtml(vuln.cwe)}</p>` : ''}
+                            ${vuln.remediation ? `<p><strong>Remediation:</strong> ${escapeHtml(vuln.remediation)}</p>` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            modal.classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+        }
+        
+        function downloadReport(scanId, format) {
+            if (format === 'html') {
+                window.location.href = `/api/download-report/${scanId}`;
+            } else {
+                window.location.href = `/api/export/${scanId}/${format}`;
+            }
+        }
+        
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('scan-list');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <h3>Error</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        window.onclick = function(event) {
+            const modal = document.getElementById('detail-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        loadScans();
+    </script>
+</body>
+</html>
